@@ -9,4 +9,4 @@ Our main approach is to work on our tutorials individually and if we run into is
 
 Also, keep commentary regarding to which steps of the tutorial/process you are in so that if we run into similar problems we can figure the solution out.
 
-tutorial for backend: https://dzone.com/articles/create-a-database-android-application-in-android-s let's try to get some user login or something in addition to our weather app so that we can have a database
+tutorial for backend: https://www.raywenderlich.com/5114-firebase-tutorial-for-android-getting-startedlet's try to get some user login or something in addition to our weather app so that we can have a database
