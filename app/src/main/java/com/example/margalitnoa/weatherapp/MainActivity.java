@@ -3,7 +3,6 @@ package com.example.margalitnoa.weatherapp;
 import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
@@ -17,13 +16,22 @@ import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.margalitnoa.weatherapp.Common.Common;
 import com.example.margalitnoa.weatherapp.Helper.Helper;
+import com.example.margalitnoa.weatherapp.Model.Main;
 import com.example.margalitnoa.weatherapp.Model.OpenWeatherMap;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.squareup.picasso.Picasso;
+
+import java.lang.reflect.Type;
+
+import static android.webkit.ConsoleMessage.MessageLevel.LOG;
 
 public class MainActivity extends AppCompatActivity implements LocationListener {
 
-    ;
+
     TextView txtCity, txtLastUpdate, txtDescription, txtHumidity, txtTime, txtCelsius;
     ImageView imageView;
 
@@ -59,17 +67,30 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     Manifest.permission.ACCESS_NETWORK_STATE,
                     Manifest.permission.SYSTEM_ALERT_WINDOW,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE
-            }, MY_PERMISSION);
+        }, MY_PERMISSION);
+
         }
         Location location = locationManager.getLastKnownLocation(provider);
         if (location == null)
-            LOG.e("TAG", "No Location");
+            Log.e("TAG", "No Location");
 
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{
+                    Manifest.permission.INTERNET,
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_NETWORK_STATE,
+                    Manifest.permission.SYSTEM_ALERT_WINDOW,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+
+
+            }, MY_PERMISSION);
+        }
         locationManager.removeUpdates(this);
     }
 
@@ -94,6 +115,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         lat = location.getLatitude();
         lng = location.getLongitude();
 
+        new GetWeather().execute(Common.apiRequest(String.valueOf(lat),String.valueOf(lng)));
+
+
     }
 
     @Override
@@ -111,7 +135,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     }
 
-    private class GetWeather extends AsyncTask<String, Void, String> {
+    private class GetWeather extends AsyncTask<String,Void,String>{
         ProgressDialog pd = new ProgressDialog(MainActivity.this);
 
         @Override
@@ -140,8 +164,19 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 pd.dismiss();
                 return;
             }
+        Gson gson = new Gson();
+        Type mType = new TypeToken<OpenWeatherMap>(){}.getType();
+        openWeatherMap = gson.fromJson(s,mType);
+        pd.dismiss();
 
-            
+        txtCity.setText(String.format("%s,%s", openWeatherMap.getName(), openWeatherMap.getSys().getCountry()));
+        txtLastUpdate.setText(String.format("Last Updated: %s", Common.getDateNow()));
+        txtDescription.setText(String.format("%s",openWeatherMap.getWeather().get(0).getDescription()));
+        txtHumidity.setText(String.format("%d%%", openWeatherMap.getMain().getHumidity()));
+        txtTime.setText(String.format("%s/%s", Common.unixTimeStampToDateTime(openWeatherMap.getSys().getSunrise()), Common.unixTimeStampToDateTime(openWeatherMap.getSys().getSunset())));
+        txtCelsius.setText(String.format("%.2f °C", openWeatherMap.getMain().getTemp()));
+        Picasso.get().load(Common.getImage(openWeatherMap.getWeather().get(0).getIcon()))
+                .into(imageView);
         }
     }
 }
